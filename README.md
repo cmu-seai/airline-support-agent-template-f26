@@ -9,9 +9,7 @@ It contains both a TypeScript and a Python implementation. You can work with eit
 
 ## Prerequisites
 
-Any model with modern OpenAI-compatible function calling abilities can be used. LiteLLM currently supports 972 of these models (see `python/agent/supported_models.py`). You are welcome to use any models; we have tested the assignment with Gemini models that provide free, rate-limited access. You can set the used model in the `config.ts` or `config.py` file. Rate limits can be configured in the same file.
-
-Set up you API key (e.g., [Google API key](https://ai.google.dev) for Gemini model) as environment variable or in .env file.
+Any model with modern OpenAI-compatible function calling abilities can be used. LiteLLM supports over 900 models (see `python/agent/supported_models.py`). You are welcome to use any models with tool calling abilities. Unless you otherwise have access to strong modern models, we strongly suggest to use the Gemini models through Vertex with the provided credits (see Canvas). You can set the used model in the `config.ts` or `config.py` file. Rate limits can be configured in the same file. Set up you API key as environment variable or in .env file.
 
 ## Project Structure
 
