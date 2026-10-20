@@ -46,9 +46,6 @@ class ToolCallingAgent:
     3. Adds tool results back to the conversation
 
     This continues until the LLM provides a final text response without tool calls.
-
-    In addition to the MCP tools, the agent has a `remember` tool to save notes to
-    its long-term memory, which is included in the system prompt of new conversations.
     """
 
     def __init__(
