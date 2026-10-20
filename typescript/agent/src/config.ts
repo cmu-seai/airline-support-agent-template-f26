@@ -11,7 +11,7 @@ import { rateLimitedModel, RateLimiter } from "./rate_limiter.ts";
 
 const rateLimiter = new RateLimiter();
 
-const defaultModel = rateLimitedModel(google("gemini-2.5-flash-lite"), rateLimiter)
+const defaultModel = rateLimitedModel(google("gemini-3.8-flash"), rateLimiter)
 
 //for the agent
 export const agentModel = defaultModel

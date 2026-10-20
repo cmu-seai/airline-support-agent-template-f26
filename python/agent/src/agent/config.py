@@ -14,9 +14,9 @@ from .rate_limiter import RateLimiter
 #################################
 
 # LiteLLM supports many providers - just change the model string:
-# - OpenAI: "gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"
-# - Anthropic: "claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"
-# - Google: "gemini/gemini-2.0-flash-exp", "gemini/gemini-1.5-pro"
+# - OpenAI: "gpt-6-sol", "gpt-5.6", "gpt-5.5"
+# - Anthropic: "anthropic/claude-opus-5-5", "anthropic/claude-sonnet-5", "anthropic/claude-haiku-4-5"
+# - Google: "gemini/gemini-3.8-flash", "gemini/gemini-3.5-flash-lite"
 # See: https://docs.litellm.ai/docs/providers
 
 # Rate limiter: 5 calls per 60 seconds (1 minute)
@@ -40,11 +40,10 @@ def agent_llm(messages, tools):
     """
     has_tools = len(tools) > 0
     return completion(
-                model="gemini/gemini-2.0-flash",
+                model="gemini/gemini-3.8-flash",
                 messages=messages,
                 tools=tools if has_tools else None,
                 tool_choice="auto" if has_tools else None,
-                temperature=0.0,
             )
 
 # Benchmark functions - by default uses same model as agent but without tool calling
