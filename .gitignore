@@ -2,3 +2,7 @@
 .env
 node_modules
 assignment/agent/messages.log
+
+# Long-term memory of the agent (runtime data)
+memory.md
+benchmark_memory.md

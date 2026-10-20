@@ -46,6 +46,11 @@ def agent_llm(messages, tools):
                 tool_choice="auto" if has_tools else None,
             )
 
+# Memory function - by default uses same model as agent but without tool calling
+def memory_llm(messages):
+    return agent_llm(messages, tools=[])
+
+
 # Benchmark functions - by default uses same model as agent but without tool calling
 def benchmark_user_simulation_llm(messages):
     return agent_llm(messages, tools=[])
@@ -63,3 +68,18 @@ def benchmark_nl_evaluation_llm(messages):
 
 TAU2_DOMAIN = "airline"  # "airline" | "mock"
 TAU2_DOMAIN_DATA_PATH = f"../../../../data/{TAU2_DOMAIN}/"
+
+
+#################################
+# Long-term memory
+#################################
+
+# Markdown file with the agent's long-term memory (relative to the working directory).
+# Shared across all conversations and users.
+MEMORY_FILE = "memory.md"
+
+# Separate memory for benchmark runs, cleared at the start of each run
+BENCHMARK_MEMORY_FILE = "benchmark_memory.md"
+
+# Length limit for the memory, enforced by the LLM when integrating new notes
+MEMORY_MAX_WORDS = 1000

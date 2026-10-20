@@ -15,7 +15,8 @@ from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 
 from .tool_manager import ToolManager
-from .config import TAU2_DOMAIN_DATA_PATH, agent_llm
+from .memory import Memory, REMEMBER_TOOL
+from .config import TAU2_DOMAIN_DATA_PATH, MEMORY_FILE, agent_llm
 
 
 @dataclass
@@ -45,12 +46,16 @@ class ToolCallingAgent:
     3. Adds tool results back to the conversation
 
     This continues until the LLM provides a final text response without tool calls.
+
+    In addition to the MCP tools, the agent has a `remember` tool to save notes to
+    its long-term memory, which is included in the system prompt of new conversations.
     """
 
     def __init__(
         self,
         tool_manager: ToolManager,
-        max_steps: int = 5
+        max_steps: int = 5,
+        memory_file: str = MEMORY_FILE
     ):
         """
         Initialize the agent.
@@ -58,9 +63,11 @@ class ToolCallingAgent:
         Args:
             tool_manager: Manager for MCP tools
             max_steps: Maximum reasoning steps before giving up
+            memory_file: Markdown file holding the long-term memory
         """
         self.tool_manager = tool_manager
         self.max_steps = max_steps
+        self.memory = Memory(memory_file)
         self.messages: List[Dict[str, Any]] = []
         self.logger = logging.getLogger("agent.messages")
         for handler in list(self.logger.handlers):
@@ -131,7 +138,7 @@ class ToolCallingAgent:
             fields (e.g., Gemini thought signatures or thinking blocks) that must be
             sent back to the model in later calls.
         """
-        tools = self.tool_manager.get_tools()
+        tools = self.tool_manager.get_tools() + [REMEMBER_TOOL]
 
         try:
             response = agent_llm(
@@ -162,8 +169,11 @@ class ToolCallingAgent:
             # Parse arguments (they come as a JSON string)
             tool_args = json.loads(tool_args_str) if isinstance(tool_args_str, str) else tool_args_str
 
-            # Execute the tool
-            result = self.tool_manager.execute_tool(tool_name, tool_args)
+            # Execute the tool (memory is handled by the agent, all others by MCP servers)
+            if tool_name == "remember":
+                result = self.memory.remember(tool_args["note"])
+            else:
+                result = self.tool_manager.execute_tool(tool_name, tool_args)
 
             return {
                 "role": "tool",
@@ -235,4 +245,4 @@ class ToolCallingAgent:
                 "Please ensure the template file is available before running the agent."
             ) from exc
 
-        return template.replace("$POLICY", policy)
+        return template.replace("$POLICY", policy).replace("$MEMORY", self.memory.load())

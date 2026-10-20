@@ -17,7 +17,8 @@ import { RateLimiter } from "./rate_limiter.ts";
 import { ToolManager } from "./tool_manager.ts";
 import type { MCPServerStatus } from "./mcp_client.ts";
 import { logMessageToContext } from "./logging.ts";
-import { agentModel, tau2DomainDataPath } from "./config.ts";
+import { Memory, rememberTool } from "./memory.ts";
+import { agentModel, memoryFile, tau2DomainDataPath } from "./config.ts";
 
 dotenv.config();
 
@@ -28,16 +29,20 @@ export class ToolCallingAgent {
   readonly toolManager: ToolManager;
   private readonly maxSteps: number = 5;
   private readonly model: LanguageModel;
+  // Long-term memory, which the LLM can add to with the `remember` tool
+  private readonly memory: Memory;
 
   constructor(
     toolManager: ToolManager,
     model: LanguageModel = agentModel,
     maxSteps: number = 5,
+    memoryPath: string = memoryFile,
   ) {
     this.toolManager = toolManager;
     this.maxSteps = maxSteps;
     this.messages = [];
     this.model = model;
+    this.memory = new Memory(memoryPath);
     this.addToContext({ role: "system", content: this.createSystemPrompt() });
   }
 
@@ -91,7 +96,7 @@ export class ToolCallingAgent {
   }
 
   private async reason(): Promise<ModelResponse> {
-    const tools = this.toolManager.getTools();
+    const tools = { ...this.toolManager.getTools(), ...rememberTool };
     const hasTools = Object.keys(tools).length > 0;
 
     const response = await generateText({
@@ -113,10 +118,13 @@ export class ToolCallingAgent {
       `🔧 Executing: ${toolCall.toolName}(${JSON.stringify(toolCall.input)})`,
     );
     try {
-      const result = await this.toolManager.executeTool(
-        toolCall.toolName,
-        toolCall.input as Record<string, unknown>,
-      );
+      // Execute the tool (memory is handled by the agent, all others by MCP servers)
+      const result = toolCall.toolName === "remember"
+        ? await this.memory.remember((toolCall.input as { note: string }).note)
+        : await this.toolManager.executeTool(
+          toolCall.toolName,
+          toolCall.input as Record<string, unknown>,
+        );
 
       return {
         role: "tool",
@@ -187,6 +195,8 @@ export class ToolCallingAgent {
       new URL("./prompts/system_prompt.txt", import.meta.url),
     );
 
-    return template.replace("$POLICY", () => policy);
+    return template
+      .replace("$POLICY", () => policy)
+      .replace("$MEMORY", () => this.memory.load());
   }
 }
