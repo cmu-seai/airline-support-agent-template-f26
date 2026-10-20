@@ -54,6 +54,7 @@ ${this.userScenario}
     const response = await generateText({
       model: this.model,
       messages: this.userConversationHistory,
+      allowSystemInMessages: true,
     });
 
     const userResponse = response.text;

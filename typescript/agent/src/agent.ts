@@ -1,9 +1,9 @@
 import { google } from "@ai-sdk/google";
-import { LanguageModelV2 } from "@ai-sdk/provider";
 import { generateText } from "ai";
 import type {
   AssistantModelMessage,
   GenerateTextResult,
+  LanguageModel,
   ModelMessage,
   SystemModelMessage,
   ToolCallPart,
@@ -27,11 +27,11 @@ export class ToolCallingAgent {
   private readonly messages: ModelMessage[];
   readonly toolManager: ToolManager;
   private readonly maxSteps: number = 5;
-  private readonly model: LanguageModelV2;
+  private readonly model: LanguageModel;
 
   constructor(
     toolManager: ToolManager,
-    model: LanguageModelV2 = agentModel,
+    model: LanguageModel = agentModel,
     maxSteps: number = 5,
   ) {
     this.toolManager = toolManager;
@@ -100,6 +100,7 @@ export class ToolCallingAgent {
       tools: hasTools ? tools : undefined,
       toolChoice: hasTools ? "auto" : undefined,
       maxRetries: 2,
+      allowSystemInMessages: true,
     });
 
     return response;

@@ -1,4 +1,4 @@
-import { google } from "npm:@ai-sdk/google";
+import { google } from "@ai-sdk/google";
 import { rateLimitedModel, RateLimiter } from "./rate_limiter.ts";
 
 /////////////////////////////////

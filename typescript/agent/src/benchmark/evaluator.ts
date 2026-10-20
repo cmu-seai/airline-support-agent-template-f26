@@ -202,6 +202,7 @@ ${JSON.stringify(nlAssertions)}`;
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
+        allowSystemInMessages: true,
       });
 
       const resultData = parser.parse(response.text);
