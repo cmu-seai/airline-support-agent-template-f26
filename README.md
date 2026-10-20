@@ -32,3 +32,13 @@ Any model with modern OpenAI-compatible function calling abilities can be used. 
 - The airline database is loaded from `data/airline/db.json`
 - The policy is in `data/airline/policy.md`
 - Changes to the database through the web UI or MCP tools are in-memory only (not persisted)
+
+## Where Real Agent Systems Go Next
+
+This agent is intentionally minimal: a single loop that calls the LLM, executes requested tool calls, and repeats until the LLM answers with text. Production agents build on the same loop but add more machinery. Some common extensions, none of which are implemented here:
+
+- **Sub-agents:** A main agent delegates subtasks (e.g., "find all flights from JFK to SEA next week") to separate agent instances with their own context and often a narrower set of tools, and receives only a summary back. This keeps the main context small and allows specialization or parallel work.
+- **Long-term memory:** Information is persisted across conversations (e.g., user preferences, facts learned in earlier sessions), typically stored in files or a database and retrieved into the context when relevant, either automatically or through dedicated memory tools.
+- **Context compaction:** In long conversations, the history eventually exceeds the context window or gets expensive. Agents summarize or drop older turns and large tool results, keeping only what is needed to continue.
+- **Skills / progressive disclosure:** Instead of putting all instructions and tools into the system prompt (as we do with the entire policy and all tools), the agent sees only short descriptions of available instructions/tools/skills and loads the full text on demand when a task needs it (e.g., the baggage rules only when baggage comes up).
+- **Agent frameworks:** Libraries such as [LangGraph](https://www.langchain.com/langgraph), the [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/), the [Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk/overview), or the agent abstractions in the [AI SDK](https://ai-sdk.dev/docs/agents/overview) provide the agent loop, tool integration, memory, multi-agent orchestration, tracing, and human-in-the-loop approval out of the box. 
