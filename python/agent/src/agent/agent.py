@@ -96,34 +96,25 @@ class ToolCallingAgent:
 
         # Agent loop
         for step in range(1, self.max_steps + 1):
-            response = self._reason()
+            message = self._reason()
+            text = message.get("content")
+            tool_calls = message.get("tool_calls") or []
 
-            # Check if LLM provided text response
-            if response.get("text"):
-                self._add_to_context({
-                    "role": "assistant",
-                    "content": response["text"]
-                })
+            # Empty response (neither text nor tool calls): try again
+            if not text and not tool_calls:
+                continue
 
-            # Check if LLM wants to use tools
-            use_tools = response.get("tool_calls") and len(response["tool_calls"]) > 0
+            # Add the assistant message (text and/or tool calls) as one turn
+            self._add_to_context(message)
 
-            if use_tools:
-                # Add assistant message with tool calls
-                self._add_to_context({
-                    "role": "assistant",
-                    "content": None,
-                    "tool_calls": response["tool_calls"]
-                })
-
-                # Execute tool calls and add results
-                for tool_call in response["tool_calls"]:
-                    result = self._act(tool_call)
-                    self._add_to_context(result)
+            # Execute tool calls and add results
+            for tool_call in tool_calls:
+                result = self._act(tool_call)
+                self._add_to_context(result)
 
             # Exit condition: text response without tool calls
-            if response.get("text") and not use_tools:
-                return response["text"]
+            if not tool_calls:
+                return text
 
         # Max steps reached
         raise RuntimeError(
@@ -135,7 +126,10 @@ class ToolCallingAgent:
         Call the LLM to reason about the next step.
 
         Returns:
-            Dictionary with 'text' and/or 'tool_calls'
+            The assistant message as a dictionary, with 'content' and/or 'tool_calls'.
+            The message is kept as returned by the model, including provider-specific
+            fields (e.g., Gemini thought signatures or thinking blocks) that must be
+            sent back to the model in later calls.
         """
         tools = self.tool_manager.get_tools()
 
@@ -145,27 +139,7 @@ class ToolCallingAgent:
                 tools
             )
 
-            message = response.choices[0].message
-
-            # Extract text and tool calls
-            result = {
-                "text": message.content if hasattr(message, 'content') else None,
-                "tool_calls": []
-            }
-
-            # Parse tool calls if present
-            if hasattr(message, 'tool_calls') and message.tool_calls:
-                for tc in message.tool_calls:
-                    result["tool_calls"].append({
-                        "id": tc.id,
-                        "type": tc.type,
-                        "function": {
-                            "name": tc.function.name,
-                            "arguments": tc.function.arguments
-                        }
-                    })
-
-            return result
+            return response.choices[0].message.model_dump(exclude_none=True)
 
         except Exception as e:
             self.logger.error(json.dumps({"error": str(e)}))

@@ -50,22 +50,27 @@ export class ToolCallingAgent {
       console.log(`\n--- Step ${step} ---`);
 
       const response: ModelResponse = await this.reason();
+      const useTools = response.toolCalls.length > 0;
+
+      // Empty response (neither text nor tool calls): try again
+      if (!response.text && !useTools) {
+        continue;
+      }
 
       if (response.text) {
-        this.addToContext({ role: "assistant", content: response.text });
-
         console.log(`🤖 Assistant: ${response.text}\n`);
       }
 
-      const useTools = response.toolCalls && response.toolCalls.length > 0;
+      // Add the assistant message (text and/or tool calls) as one turn.
+      // We keep the messages as returned by the model, including
+      // provider-specific fields (e.g., Gemini thought signatures or
+      // reasoning parts) that must be sent back to the model in later calls.
+      for (const message of response.response.messages) {
+        this.addToContext(message);
+      }
+
       if (useTools) {
         console.log(`🔧 Tool calls requested: ${response.toolCalls.length}`);
-
-        // Add assistant message with tool calls
-        this.addToContext({
-          role: "assistant",
-          content: response.toolCalls,
-        });
 
         // Execute tool calls and add results
         for (const toolCall of response.toolCalls) {
@@ -74,7 +79,7 @@ export class ToolCallingAgent {
         }
       }
 
-      if (response.text && !useTools) {
+      if (!useTools) {
         // Exit loop - waiting for user's next input
         return response.text;
       }
