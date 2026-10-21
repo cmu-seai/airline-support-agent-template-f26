@@ -13,7 +13,7 @@ authors = [
     {name = "Agent Team"}
 ]
 dependencies = [
-    "litellm>=1.100.0",
+    "litellm=1.106.2",
     "mcp>=2.0.0,<3",
     "flask>=3.1.0",
 ]
